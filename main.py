@@ -1,23 +1,164 @@
+from bson import json_util
+from flask import Flask, jsonify, request
 from pymongo import MongoClient
 import json
+import time
 
-client = MongoClient()
-
+app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017")
 
 myDatabase = client['game-x']
 myCollection = myDatabase['users']
-leaderboard = '{}'
 
-for x in myCollection.find().sort("points", -1).limit(3):
-    playingScore = 0
-    print(x['user_id'])
+
+# this returns the 1.2.3 players with their ranks
+def getLeaderBoard():
+    leaderboard = []
+    myFind = {}
+    myFilter = {"_id": 0, "points": 1, "display_name": 1, "country": 1, "timestamp":1}
+    for x in myCollection.find(myFind, myFilter).sort("points", -1).limit(10):
+        # print(x['user_id'])
+        playerScore = x["points"]
+        playerTimeStamp = x["timestamp"]
+        b = myCollection.find({"points": {"$gt": playerScore}}).count()
+        c = myCollection.find({"points": {"$eq": playerScore}, "timestamp": {"$gt": playerTimeStamp}}).count()
+        x['rank'] = b+c + 1
+        leaderboard.append(x)
+    return leaderboard
+
+
+# this returns the 1.2.3 players with their ranks by country iso code(country spesific data)
+def getLeaderBoardWithCountryIsoCode(country_iso_code):
+    leaderboardWithCountryIsoCode = []
+    myFind = {"country": country_iso_code}
+    myFilter = {"_id": 0, "points": 1, "display_name": 1, "country": 1}
+    for x in myCollection.find(myFind, myFilter).sort("points", -1).limit(3):
+        agg_result = myCollection.aggregate(
+            [
+                {
+                    "$match": {
+                        "points": {
+                            "$gte": x['points']
+                        }
+                    }
+                },
+                {
+                    "$count": "passing_scores"
+                }
+            ]
+        )
+        for a in agg_result:
+            print(a)
+            x['rank'] = a['passing_scores']
+        leaderboardWithCountryIsoCode.append(x)
+    return leaderboardWithCountryIsoCode
+
+
+def parse_json(data):
+    return json.loads(json_util.dumps(data))
+
+
+# this returns user profile finding by GUID and adds its rank
+def getUserProfileWithGuid(guid):
+    myFind = {"user_id": guid}
+    myFilter = {"_id": 0, "points": 1, "display_name": 1, "country": 1}
+    userprofileWithGuid = myCollection.find_one(myFind, myFilter)
+    print(userprofileWithGuid)
+    if userprofileWithGuid is not None:
+        agg_result = myCollection.aggregate(
+            [
+                {
+                    "$match": {
+                        "points": {
+                            "$gte": userprofileWithGuid['points']
+                        }
+                    }
+                },
+                {
+                    "$count": "passing_scores"
+                }
+            ]
+        )
+        for a in agg_result:
+            userprofileWithGuid['rank'] = a['passing_scores']
+    else:
+        pass
+    return userprofileWithGuid
+
+
+
+# this returns a epoch time in the type of int
+def getTimestamp():
+    return int(time.time())
+
+
+@app.route('/', methods=['GET'])
+def landingPage():
+    return "The resource cannot be found"
+
+
+@app.route('/leaderboard', methods=['GET'])
+def leaderboardPage():
+    return jsonify(parse_json(getLeaderBoard()))
+
+
+@app.route('/leaderboard/<country_iso_code>', methods=['GET'])
+def leaderboardPageWithCountryIsoCode(country_iso_code):
+    print(country_iso_code)
+    return jsonify(parse_json(getLeaderBoardWithCountryIsoCode(country_iso_code)))
+
+
+@app.route('/user/profile/<guid>', methods=['GET'])
+def userprofilePageWithGuid(guid):
+    result = getUserProfileWithGuid(guid)
+    if result is not None:
+        return jsonify(parse_json(result))
+    else:
+        return jsonify(parse_json({"message" : "user doesn't exists", "success" : False}))
+
+
+@app.route('/user/create', methods=['POST'])
+def usercreatePage():
+    # checking the existing guid for preventing collusion
+    guid = request.get_json()['user_id']
+    myFind = {"user_id": guid}
+    myFilter = {"_id": 0, "points": 1, "display_name": 1, "country": 1}
+    userprofileWithGuid = myCollection.find_one(myFind, myFilter)
+    if userprofileWithGuid is None:
+        newUserProfile = {}
+        newUserProfile['display_name'] = request.get_json()['display_name']
+        newUserProfile['user_id'] = request.get_json()['user_id']
+        newUserProfile['points'] = request.get_json()['points']
+        newUserProfile['country'] = request.get_json()['country']
+        newUserProfile['timestamp'] = getTimestamp()
+        print(newUserProfile)
+        myCollection.insert(newUserProfile)
+        return jsonify(parse_json(newUserProfile))
+    else:
+        return jsonify(parse_json({"message" : "user exists", "success" : False}))
+
+
+@app.route('/score/submit', methods=['POST'])
+def scoresubmitPage():
+    print(request.get_json())
+    guid = request.get_json()['user_id']
+    scoreWorth = request.get_json()['score_worth']
+    myFind = {"user_id": guid}
+    myFilter = {"_id": 0, "points": 1, "user_id": 1, "display_name": 1}
+    userprofileWithGuid = myCollection.find_one(myFind, myFilter)
+    userprofileWithGuid['points'] += scoreWorth     # increase player score
+    print(userprofileWithGuid)
+    myQuery = {"user_id" : userprofileWithGuid["user_id"]}
+    myNewValues = {"$set": {"points" : userprofileWithGuid['points']}}
+    myCollection.update_one(myQuery,myNewValues)
+
+    # find user rank
     agg_result = myCollection.aggregate(
         [
             {
                 "$match": {
                     "points": {
-                        "$gte": x['points']
+                        "$gte": userprofileWithGuid['points']
                     }
                 }
             },
@@ -26,12 +167,21 @@ for x in myCollection.find().sort("points", -1).limit(3):
             }
         ]
     )
-    leaderboard = x
-    for y in agg_result:
-        if y['passing_scores'] == 0:
-            print("null")
-        else:
-            print(y['passing_scores'])
-        leaderboard['rank'] = y
+    for a in agg_result:
+        userprofileWithGuid['rank'] = a['passing_scores']
+    return jsonify(parse_json(userprofileWithGuid))
 
-print(leaderboard)
+
+@app.errorhandler(404)
+def not_found(*args):
+    """Page not found."""
+    return jsonify(parse_json({"message":"The resource cannot be found"}))
+
+playerScore = 910
+playerTimeStamp = 1611171730
+b = myCollection.find({ "points": { "$gte": playerScore }}).count()
+c = myCollection.find({ "points": { "$eq" : playerScore }, "timestamp": {"$gt":playerTimeStamp}}).count()
+print(b,c, b-c)
+
+if __name__ == '__main__':
+    app.run(host="localhost", port=3000, debug=True)
