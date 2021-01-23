@@ -10,6 +10,7 @@ import uuid
 
 app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017")
+client = MongoClient("mongodb+srv://samet-kamgul:6x4YRZlBcSXkdg1I@cluster0.cvsg4.mongodb.net/game-x?retryWrites=true&w=majority")
 
 myDatabase = client['game-x']
 myCollection = myDatabase['users']
@@ -32,9 +33,8 @@ def getLeaderBoard():
     if len(leaderboard) == 0:
         leaderboard = {"message" : "Database is empty"}
     else:
-        pass
-    for y in leaderboard:
-        y.pop('timestamp', None)    # remove 'timestamp' from dictionary for not showing
+        for y in leaderboard:
+            y.pop('timestamp', None)    # remove 'timestamp' from dictionary for not showing
     return leaderboard
 
 # this returns for sorting leaderboard list by rank and presenting in sorted
