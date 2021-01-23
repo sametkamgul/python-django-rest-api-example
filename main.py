@@ -3,6 +3,9 @@ from flask import Flask, jsonify, request
 from pymongo import MongoClient
 import json
 import time
+import names
+import random
+import uuid
 
 app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017")
@@ -21,11 +24,15 @@ def getLeaderBoard():
         playerScore = x["points"]
         playerTimeStamp = x["timestamp"]
         b = myCollection.find({"points": {"$gt": playerScore}}).count()
-        c = myCollection.find({"points": {"$eq": playerScore}, "timestamp": {"$gt": playerTimeStamp}}).count()
+        c = myCollection.find({"points": {"$eq": playerScore}, "timestamp": {"$lt": playerTimeStamp}}).count()
         x['rank'] = b+c + 1
         leaderboard.append(x)
+    leaderboard.sort(key=sortListFunction)
     return leaderboard
 
+# this returns for sorting leaderboard list by rank and presenting in sorted
+def sortListFunction(e):
+    return e["rank"]
 
 # this returns the 1.2.3 players with their ranks by country iso code(country spesific data)
 def getLeaderBoardWithCountryIsoCode(country_iso_code):
@@ -149,8 +156,8 @@ def scoresubmitPage():
     userprofileWithGuid['points'] += scoreWorth     # increase player score
     print(userprofileWithGuid)
     myQuery = {"user_id" : userprofileWithGuid["user_id"]}
-    myNewValues = {"$set": {"points" : userprofileWithGuid['points']}}
-    myCollection.update_one(myQuery,myNewValues)
+    myNewValues = {"$set": {"points" : userprofileWithGuid['points'], "timestamp" : int(time.time())}}
+    myCollection.update_one(myQuery, myNewValues)
 
     # find user rank
     agg_result = myCollection.aggregate(
@@ -172,16 +179,52 @@ def scoresubmitPage():
     return jsonify(parse_json(userprofileWithGuid))
 
 
+@app.route('/createfields')
+@app.route('/createfields/<iteration>')
+def createFieldsPage(iteration):
+    """
+    this function creates fake fields for testing the Restful API
+    sample MongoDB field in JSON
+    {
+        "_id": {
+            "$oid": "600887737718091954842845"
+        },
+        "user_id": "d28d919b-1f95-4003-a2cf-7ede28279d08",
+        "display_name": "Hugh Dach V",
+        "points": 875,
+        "country": "tr",
+        "timestamp": 1611171699
+    }
+    :param iteration:
+    :return:
+    """
+
+    # null check for iteration
+    if iteration is None:
+        iteration = 5
+    else:
+        iteration = int(iteration)
+
+    countryCodeList = ["tr", "en", "de", "es", "it"]
+    for x in range(iteration):
+        newField = {
+            "user_id": str(uuid.uuid4()),
+            "display_name": names.get_full_name().replace(' ', ''),
+            "points": random.randint(0, 9999),
+            "country": countryCodeList[random.randint(0, len(countryCodeList) - 1)],
+            "timestamp": int(time.time())
+        }
+        myCollection.insert(newField)
+        time.sleep(1)
+        print("inserted:", newField)
+    return jsonify(parse_json({"message" : str(iteration) + " amount of resource(s) has been entered", "success": True}))
+
+
 @app.errorhandler(404)
 def not_found(*args):
     """Page not found."""
     return jsonify(parse_json({"message":"The resource cannot be found"}))
 
-playerScore = 910
-playerTimeStamp = 1611171730
-b = myCollection.find({ "points": { "$gte": playerScore }}).count()
-c = myCollection.find({ "points": { "$eq" : playerScore }, "timestamp": {"$gt":playerTimeStamp}}).count()
-print(b,c, b-c)
 
 if __name__ == '__main__':
     app.run(host="localhost", port=3000, debug=True)
