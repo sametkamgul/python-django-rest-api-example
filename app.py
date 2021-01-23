@@ -7,6 +7,7 @@ import names
 import random
 import uuid
 
+
 app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017")
 
@@ -28,6 +29,10 @@ def getLeaderBoard():
         x['rank'] = b+c + 1
         leaderboard.append(x)
     leaderboard.sort(key=sortListFunction)
+    if len(leaderboard) == 0:
+        leaderboard = {"message" : "Database is empty"}
+    else:
+        pass
     return leaderboard
 
 # this returns for sorting leaderboard list by rank and presenting in sorted
@@ -39,6 +44,8 @@ def getLeaderBoardWithCountryIsoCode(country_iso_code):
     leaderboardWithCountryIsoCode = []
     myFind = {"country": country_iso_code}
     myFilter = {"_id": 0, "points": 1, "display_name": 1, "country": 1}
+    if country_iso_code is None:
+        return
     for x in myCollection.find(myFind, myFilter).sort("points", -1).limit(3):
         agg_result = myCollection.aggregate(
             [
@@ -58,6 +65,10 @@ def getLeaderBoardWithCountryIsoCode(country_iso_code):
             print(a)
             x['rank'] = a['passing_scores']
         leaderboardWithCountryIsoCode.append(x)
+    if len(leaderboardWithCountryIsoCode) == 0:
+        leaderboardWithCountryIsoCode = {"message" : "Database is empty"}
+    else:
+        pass
     return leaderboardWithCountryIsoCode
 
 
@@ -111,7 +122,6 @@ def leaderboardPage():
 
 @app.route('/leaderboard/<country_iso_code>', methods=['GET'])
 def leaderboardPageWithCountryIsoCode(country_iso_code):
-    print(country_iso_code)
     return jsonify(parse_json(getLeaderBoardWithCountryIsoCode(country_iso_code)))
 
 
@@ -121,7 +131,7 @@ def userprofilePageWithGuid(guid):
     if result is not None:
         return jsonify(parse_json(result))
     else:
-        return jsonify(parse_json({"message" : "user doesn't exists", "success" : False}))
+        return jsonify(parse_json({"message" : "user doesn't exists"}))
 
 
 @app.route('/user/create', methods=['POST'])
