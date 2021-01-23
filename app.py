@@ -33,6 +33,8 @@ def getLeaderBoard():
         leaderboard = {"message" : "Database is empty"}
     else:
         pass
+    for y in leaderboard:
+        y.pop('timestamp', None)    # remove 'timestamp' from dictionary for not showing
     return leaderboard
 
 # this returns for sorting leaderboard list by rank and presenting in sorted
@@ -62,11 +64,11 @@ def getLeaderBoardWithCountryIsoCode(country_iso_code):
             ]
         )
         for a in agg_result:
-            print(a)
+            #print(a)
             x['rank'] = a['passing_scores']
         leaderboardWithCountryIsoCode.append(x)
     if len(leaderboardWithCountryIsoCode) == 0:
-        leaderboardWithCountryIsoCode = {"message" : "Database is empty"}
+        leaderboardWithCountryIsoCode = {"message" : "Country code is invalid"}
     else:
         pass
     return leaderboardWithCountryIsoCode
@@ -81,7 +83,7 @@ def getUserProfileWithGuid(guid):
     myFind = {"user_id": guid}
     myFilter = {"_id": 0, "points": 1, "display_name": 1, "country": 1}
     userprofileWithGuid = myCollection.find_one(myFind, myFilter)
-    print(userprofileWithGuid)
+    #print(userprofileWithGuid)
     if userprofileWithGuid is not None:
         agg_result = myCollection.aggregate(
             [
@@ -148,7 +150,7 @@ def usercreatePage():
         newUserProfile['points'] = request.get_json()['points']
         newUserProfile['country'] = request.get_json()['country']
         newUserProfile['timestamp'] = getTimestamp()
-        print(newUserProfile)
+        #print(newUserProfile)
         myCollection.insert(newUserProfile)
         return jsonify(parse_json(newUserProfile))
     else:
@@ -157,43 +159,52 @@ def usercreatePage():
 
 @app.route('/score/submit', methods=['POST'])
 def scoresubmitPage():
-    print(request.get_json())
+    """
+    this function can be used for updating a player's score.
+    :return:
+    """
+    #print(request.get_json())
     guid = request.get_json()['user_id']
     scoreWorth = request.get_json()['score_worth']
     myFind = {"user_id": guid}
     myFilter = {"_id": 0, "points": 1, "user_id": 1, "display_name": 1}
     userprofileWithGuid = myCollection.find_one(myFind, myFilter)
-    userprofileWithGuid['points'] += scoreWorth     # increase player score
-    print(userprofileWithGuid)
-    myQuery = {"user_id" : userprofileWithGuid["user_id"]}
-    myNewValues = {"$set": {"points" : userprofileWithGuid['points'], "timestamp" : int(time.time())}}
-    myCollection.update_one(myQuery, myNewValues)
+    #print(userprofileWithGuid)
+    if userprofileWithGuid is not None:
+        userprofileWithGuid['points'] += scoreWorth     # increase player score
+        myQuery = {"user_id" : userprofileWithGuid["user_id"]}
+        myNewValues = {"$set": {"points" : userprofileWithGuid['points'], "timestamp" : int(time.time())}}
+        myCollection.update_one(myQuery, myNewValues)
 
-    # find user rank
-    agg_result = myCollection.aggregate(
-        [
-            {
-                "$match": {
-                    "points": {
-                        "$gte": userprofileWithGuid['points']
+        # find user rank
+        agg_result = myCollection.aggregate(
+            [
+                {
+                    "$match": {
+                        "points": {
+                            "$gte": userprofileWithGuid['points']
+                        }
                     }
+                },
+                {
+                    "$count": "passing_scores"
                 }
-            },
-            {
-                "$count": "passing_scores"
-            }
-        ]
-    )
-    for a in agg_result:
-        userprofileWithGuid['rank'] = a['passing_scores']
+            ]
+        )
+        for a in agg_result:
+            userprofileWithGuid['rank'] = a['passing_scores']
+    else:
+        userprofileWithGuid = {"message" : "user is not found"}
     return jsonify(parse_json(userprofileWithGuid))
 
 
-@app.route('/createfields')
-@app.route('/createfields/<iteration>')
-def createFieldsPage(iteration):
+@app.route('/createfields', methods=['GET'])
+@app.route('/createfields/', methods=['GET'])
+def createFakeFieldsPage():
     """
     this function creates fake fields for testing the Restful API
+    sample GET request : localhost:3000/createfields?iteration=5
+
     sample MongoDB field in JSON
     {
         "_id": {
@@ -209,25 +220,18 @@ def createFieldsPage(iteration):
     :return:
     """
 
-    # null check for iteration
-    if iteration is None:
-        iteration = 5
-    else:
-        iteration = int(iteration)
-
+    iteration = 1000
     countryCodeList = ["tr", "en", "de", "es", "it"]
     for x in range(iteration):
         newField = {
             "user_id": str(uuid.uuid4()),
-            "display_name": names.get_full_name().replace(' ', ''),
-            "points": random.randint(0, 9999),
+            "display_name": names.get_full_name().replace(' ', '_'),
+            "points": random.randint(1, 1000000),
             "country": countryCodeList[random.randint(0, len(countryCodeList) - 1)],
-            "timestamp": int(time.time())
+            "timestamp": random.randint(946688400, 1611427150)
         }
-        myCollection.insert(newField)
-        time.sleep(1)
-        print("inserted:", newField)
-    return jsonify(parse_json({"message" : str(iteration) + " amount of resource(s) has been entered", "success": True}))
+        myCollection.insert_one(newField)
+    return jsonify(parse_json({"message" : "fake resources has been inserted"}))
 
 
 @app.errorhandler(404)
@@ -237,4 +241,4 @@ def not_found(*args):
 
 
 if __name__ == '__main__':
-    app.run(host="localhost", port=3000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=False, threaded=True)
