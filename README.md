@@ -134,26 +134,68 @@ python-3.8.6
 ## listing the leaderboard with country ISO code `https://gjg-api.herokuapp.com/leaderboard/tr`
 `sample response`
   ```json
-    [
-        {
-            "country": "tr",
-            "display_name": "Chasity_Deibel",
-            "points": 999172,
-            "rank": 1
-        },
-        {
-            "country": "tr",
-            "display_name": "Derrick_Switzer",
-            "points": 998226,
-            "rank": 4
-        },
-        {
-            "country": "tr",
-            "display_name": "Salvador_Hunter",
-            "points": 990471,
-            "rank": 20
-        }
-    ]
+[
+    {
+        "country": "tr",
+        "display_name": "samet_kamgul",
+        "points": 1023300,
+        "rank": 1
+    },
+    {
+        "country": "tr",
+        "display_name": "Chasity_Deibel",
+        "points": 999172,
+        "rank": 3
+    },
+    {
+        "country": "tr",
+        "display_name": "Derrick_Switzer",
+        "points": 998226,
+        "rank": 7
+    },
+    {
+        "country": "tr",
+        "display_name": "Victoria_Rankin",
+        "points": 995932,
+        "rank": 16
+    },
+    {
+        "country": "tr",
+        "display_name": "Peter_Swihart",
+        "points": 994600,
+        "rank": 20
+    },
+    {
+        "country": "tr",
+        "display_name": "Salvador_Hunter",
+        "points": 990471,
+        "rank": 31
+    },
+    {
+        "country": "tr",
+        "display_name": "Thomas_Young",
+        "points": 988804,
+        "rank": 45
+    },
+    {
+        "country": "tr",
+        "display_name": "Claudia_Czarnecki",
+        "points": 987721,
+        "rank": 48
+    },
+    {
+        "country": "tr",
+        "display_name": "Carol_Donnelly",
+        "points": 986183,
+        "rank": 52
+    },
+    {
+        "country": "tr",
+        "display_name": "Erica_Lunstrum",
+        "points": 985526,
+        "rank": 54
+    }
+]
  ```
 
 ## get profile of a user with guid(wrong guid) `https://gjg-api.herokuapp.com/4894b72a-8507-4d67-bf88-bfafa356814b`
