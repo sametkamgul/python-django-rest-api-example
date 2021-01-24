@@ -1,6 +1,6 @@
 # gjgRestAPI
 
-##DESCRIPTION
+## DESCRIPTION
 - Heroku free tier is used for deployment platform.
   
 - MongoDB free tier is used for database connection.
@@ -12,7 +12,7 @@
 - tested with Postman and Jmeter
 
 
-##DEPENDENCIES
+## DEPENDENCIES
 ```
 atomicwrites==1.4.0
 attrs==20.3.0
@@ -63,7 +63,7 @@ python-3.8.6
 │       test.py       
 ```
 
-#SAMPLE USAGE
+# SAMPLE USAGE
 ## listing the leaderboard `https://gjg-api.herokuapp.com/leaderboard`
 `sample response`
   ```json
@@ -235,5 +235,15 @@ python-3.8.6
 ````json
 {
     "message": "The resource cannot be found"
+}
+````
+
+## creating fake fields in the database endpoint `https://gjg-api.herokuapp.com/createfields`
+`Note: it creates 1000 fake data at once. and keep in mind it's response time is ~24 seconds.`
+
+`sample response`
+````json
+{
+    "message": "fake resources has been inserted"
 }
 ````
