@@ -64,7 +64,7 @@ python-3.8.6
 ```
 
 # SAMPLE USAGE
-## listing the leaderboard `https://gjg-api.herokuapp.com/leaderboard`
+## listing the leaderboard [GET method]`https://gjg-api.herokuapp.com/leaderboard`
 `sample response`
   ```json
     [
@@ -131,7 +131,7 @@ python-3.8.6
     ]
 ```
         
-## listing the leaderboard with country ISO code `https://gjg-api.herokuapp.com/leaderboard/tr`
+## listing the leaderboard with country ISO code [GET method] `https://gjg-api.herokuapp.com/leaderboard/tr`
 `sample response`
   ```json
 [
@@ -198,7 +198,7 @@ python-3.8.6
 ]
  ```
 
-## get profile of a user with guid(wrong guid) `https://gjg-api.herokuapp.com/4894b72a-8507-4d67-bf88-bfafa356814b`
+## get profile of a user with guid(wrong guid) [GET method] `https://gjg-api.herokuapp.com/4894b72a-8507-4d67-bf88-bfafa356814b`
   
 `sample response`
 ```json
@@ -206,7 +206,8 @@ python-3.8.6
     "message": "user doesn't exists"
 }
 ```
-## get profile of a user with guid(correct guid) `https://gjg-api.herokuapp.com/6d9d4bf3-dcfd-4137-9309-ae3cbc90b0c8` \
+## get profile of a user with guid(correct guid) [GET method] `https://gjg-api.herokuapp.com/6d9d4bf3-dcfd-4137-9309-ae3cbc90b0c8`
+
 `sample response`
 ```json
 {
@@ -217,7 +218,7 @@ python-3.8.6
 }
 ```
 
-## creating a user profile `https://gjg-api.herokuapp.com/user/create`
+## creating a user profile [POST method] `https://gjg-api.herokuapp.com/user/create`
 `request json body`
 ```json
 {
@@ -245,7 +246,7 @@ python-3.8.6
     "rank": 1
 }
 ```
-## submitting a user score `https://gjg-api.herokuapp.com/score/submit`
+## submitting a user score [POST method] `https://gjg-api.herokuapp.com/score/submit`
 
 `request body`
 ```json
@@ -280,7 +281,7 @@ python-3.8.6
 }
 ````
 
-## creating fake fields in the database endpoint `https://gjg-api.herokuapp.com/createfields`
+## creating fake fields in the database endpoint [GET method] `https://gjg-api.herokuapp.com/createfields`
 `Note: it creates 1000 fake data at once. and keep in mind it's response time is ~24 seconds.`
 
 `sample response`
