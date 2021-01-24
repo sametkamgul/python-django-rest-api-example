@@ -48,7 +48,7 @@ def getLeaderBoardWithCountryIsoCode(country_iso_code):
     myFilter = {"_id": 0, "points": 1, "display_name": 1, "country": 1}
     if country_iso_code is None:
         return
-    for x in myCollection.find(myFind, myFilter).sort("points", -1).limit(3):
+    for x in myCollection.find(myFind, myFilter).sort("points", -1).limit(10):
         agg_result = myCollection.aggregate(
             [
                 {
@@ -119,7 +119,7 @@ def landingPage():
 
 @app.route('/leaderboard', methods=['GET'])
 def leaderboardPage():
-    return jsonify(parse_json(getLeaderBoard()))
+    return json.dumps(getLeaderBoard(), indent=4, sort_keys=True)
 
 
 @app.route('/leaderboard/<country_iso_code>', methods=['GET'])
@@ -152,6 +152,25 @@ def usercreatePage():
         newUserProfile['timestamp'] = getTimestamp()
         #print(newUserProfile)
         myCollection.insert(newUserProfile)
+        newUserProfile.pop('_id', None)
+        newUserProfile.pop('user_id', None)
+        newUserProfile.pop('timestamp', None)
+        agg_result = myCollection.aggregate(
+            [
+                {
+                    "$match": {
+                        "points": {
+                            "$gte": newUserProfile['points']
+                        }
+                    }
+                },
+                {
+                    "$count": "passing_scores"
+                }
+            ]
+        )
+        for a in agg_result:
+            newUserProfile['rank'] = a['passing_scores']
         return jsonify(parse_json(newUserProfile))
     else:
         return jsonify(parse_json({"message" : "user exists", "success" : False}))
