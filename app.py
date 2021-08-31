@@ -7,14 +7,11 @@ import names
 import random
 import uuid
 
-
 app = Flask(__name__)
-client = MongoClient("mongodb://localhost:27017")
-client = MongoClient("mongodb+srv://samet-kamgul:6x4YRZlBcSXkdg1I@cluster0.cvsg4.mongodb.net/game-x?retryWrites=true&w=majority")
+client = MongoClient("mongo_db_url_here")
 
 myDatabase = client['game-x']
 myCollection = myDatabase['users']
-
 
 # this returns the 1.2.3 players with their ranks
 def getLeaderBoard():
@@ -73,10 +70,8 @@ def getLeaderBoardWithCountryIsoCode(country_iso_code):
         pass
     return leaderboardWithCountryIsoCode
 
-
 def parse_json(data):
     return json.loads(json_util.dumps(data))
-
 
 # this returns user profile finding by GUID and adds its rank
 def getUserProfileWithGuid(guid):
@@ -105,27 +100,21 @@ def getUserProfileWithGuid(guid):
         pass
     return userprofileWithGuid
 
-
-
 # this returns a epoch time in the type of int
 def getTimestamp():
     return int(time.time())
-
 
 @app.route('/', methods=['GET'])
 def landingPage():
     return "The resource cannot be found"
 
-
 @app.route('/leaderboard', methods=['GET'])
 def leaderboardPage():
     return json.dumps(getLeaderBoard(), indent=4, sort_keys=True)
 
-
 @app.route('/leaderboard/<country_iso_code>', methods=['GET'])
 def leaderboardPageWithCountryIsoCode(country_iso_code):
     return jsonify(parse_json(getLeaderBoardWithCountryIsoCode(country_iso_code)))
-
 
 @app.route('/user/profile/<guid>', methods=['GET'])
 def userprofilePageWithGuid(guid):
@@ -134,7 +123,6 @@ def userprofilePageWithGuid(guid):
         return jsonify(parse_json(result))
     else:
         return jsonify(parse_json({"message" : "user doesn't exists"}))
-
 
 @app.route('/user/create', methods=['POST'])
 def usercreatePage():
@@ -174,7 +162,6 @@ def usercreatePage():
         return jsonify(parse_json(newUserProfile))
     else:
         return jsonify(parse_json({"message" : "user exists", "success" : False}))
-
 
 @app.route('/score/submit', methods=['POST'])
 def scoresubmitPage():
@@ -216,7 +203,6 @@ def scoresubmitPage():
         userprofileWithGuid = {"message" : "user is not found"}
     return jsonify(parse_json(userprofileWithGuid))
 
-
 @app.route('/createfields', methods=['GET'])
 @app.route('/createfields/', methods=['GET'])
 def createFakeFieldsPage():
@@ -252,12 +238,10 @@ def createFakeFieldsPage():
         myCollection.insert_one(newField)
     return jsonify(parse_json({"message" : "fake resources has been inserted"}))
 
-
 @app.errorhandler(404)
 def not_found(*args):
     """Page not found."""
     return jsonify(parse_json({"message":"The resource cannot be found"}))
-
 
 if __name__ == '__main__':
     app.run(debug=False, threaded=True)
