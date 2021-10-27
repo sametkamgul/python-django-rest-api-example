@@ -1,4 +1,4 @@
-# PYTHON-DJANGO-REST-API-EXAMPLE
+# PYTHON-FLASK-REST-API-EXAMPLE
 
 ## DESCRIPTION
 - Heroku free tier is used for deployment platform.
